@@ -1,5 +1,5 @@
-const mongoose= require('mongoose');
-mongoose.connect(`mongodb://127.0.0.1:27017/jwtauthapp`);
+import mongoose from "mongoose";
+
 
 const userSchema=mongoose.Schema({
     username: String,
@@ -9,4 +9,6 @@ const userSchema=mongoose.Schema({
     loginToken: String,
   loginTokenExpires: Date,
 });
-module.exports=mongoose.model("user", userSchema);
+const user =mongoose.model("user", userSchema);
+
+export default user;

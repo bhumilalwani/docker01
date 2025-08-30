@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: node_app_container
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/mydb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:7
+    container_name: mongo_container
+    ports:
+      - "27017:27017"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7.2
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
