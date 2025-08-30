@@ -14,6 +14,7 @@ const session = require("express-session");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const cors = require("cors");
+require("dotenv").config();   // ✅ Load .env file
 
 // Middlewares
 app.use(express.json());
@@ -53,7 +54,7 @@ app.post("/api/create", async (req, res) => {
 });
 
 // ---- LOGIN FLOW USING EMAIL VERIFICATION ----
-app.post("/api/send-login-verification", async (req, res) => {    //http://localhost:3000/api
+app.post("/api/send-login-verification", async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email required" });
 
@@ -71,7 +72,7 @@ app.post("/api/send-login-verification", async (req, res) => {    //http://local
     service: "gmail",
     auth: {
       user: "lalwanibhumi91@gmail.com",
-      pass: "fkvezbysndxqghwl", // app password
+      pass: process.env.APP_PASSWORD,   // ✅ from .env
     },
   });
 
@@ -124,8 +125,8 @@ app.get("/api/verify-login", async (req, res) => {
 passport.use(
   new GoogleStrategy(
     {
-      clientID: "8817....apps.googleusercontent.com",
-      clientSecret: "GOCSPX-...",
+      clientID: process.env.GOOGLE_CLIENT_ID,     // ✅ from .env
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "http://localhost:3000/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -159,14 +160,14 @@ app.get("/auth/google/callback",
   (req, res) => {
     let token = jwt.sign({ email: req.user.email }, "shhshshshshh", { expiresIn: "1h" });
     res.cookie("token", token, { httpOnly: true });
-    res.redirect("http://localhost:5173"); // redirect back to React app
+    res.redirect("http://localhost:5173"); 
   }
 );
 
 // ---- GITHUB STRATEGY ----
 passport.use(new GitHubStrategy({
-    clientID: "Ov23liwnpdz3ZpzyAP4v",
-    clientSecret: "303858ed5a43350e98f14f581baa679811915e99",
+    clientID: process.env.GITHUB_CLIENT_ID,       // ✅ from .env
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/github/callback"
   },
   function(accessToken, refreshToken, profile, done) {
@@ -181,7 +182,7 @@ app.get("/auth/github/callback",
   (req, res) => {
     let token = jwt.sign({ email: req.user.emails[0].value }, "shhshshshshh", { expiresIn: "1h" });
     res.cookie("token", token, { httpOnly: true });
-    res.redirect("http://localhost:5173"); // back to React
+    res.redirect("http://localhost:5173"); 
   }
 );
 
