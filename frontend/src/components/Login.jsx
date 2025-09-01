@@ -35,7 +35,7 @@ const Login = () => {
 
       if (!res.ok) {
         const text = await res.text();
-        setVerificationMessage(text || "Failed to send verification email");
+        setVerificationMessage(text || "Failed to send verification email from server");
         return;
       }
 
@@ -44,7 +44,7 @@ const Login = () => {
     
     } catch (err) {
       console.error(err);
-      setVerificationMessage("Failed to send verification email");
+      setVerificationMessage("Failed to send verification email from client", err.message, "ksmdxksa");
     }
   };
 

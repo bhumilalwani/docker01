@@ -23,33 +23,50 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // ---------------- Redis Setup ----------------
-const client = createClient({ url: "redis://redis:6379" }); // use Docker container name
-client.on("error", (err) => console.error("Redis Client Error", err));
-await client.connect();
+// const client = createClient({ url: "redis://redis:6379" }); // Use service name from docker-compose
+// client.on("error", (err) => console.error("Redis Client Error", err));
 
+
+// const mongoose = require('mongoose');
+
+async function connectWithRetry() {
+  try {
+    await mongoose.connect('mongodb://mongo:27017/jwtauthapp', {
+    //   useNewUrlParser: true,
+    //   useUnifiedTopology: true,
+    });
+    console.log('Connected to MongoDB🐦‍🔥🐦‍🔥🐦‍🔥🫂🐦‍🔥');
+  } catch (error) {
+    console.log('MongoDB connection failed, retrying in 5 seconds...😖😖', error);
+    setTimeout(connectWithRetry, 5000);
+  }
+}
+
+connectWithRetry();
 
 const app = express();
 async function startServer() {
   // ---------------- Connect Redis ----------------
-  await client.connect();
-  await client.set("user:1", "Bhumi");
-  const redisValue = await client.get("user:1");
-  console.log("Redis value:", redisValue);
-
+//   await client.connect();
+//   await client.set("user:1", "Bhumi");
+//   const redisValue = await client.get("user:1");
+//   console.log("Redis value:", redisValue);
+//     console.log("✅ Redis connected");
 // ---------------- Connect MongoDB ----------------
 // Close any existing mongoose connections
-if (mongoose.connection.readyState !== 0) {
-  await mongoose.disconnect();
-}
+//   if (mongoose.connection.readyState !== 0) {
+//     await mongoose.disconnect();
+//   }
 
-const mongoUri = process.env.MONGODB_URI || 'mongodb://mongodb:27017/mydb';
-console.log('Connecting to MongoDB:', mongoUri);
-await mongoose.connect(mongoUri, { 
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+//  const mongoUri = process.env.MONGODB_URI || 'mongodb://mongo:27017/jwtauthapp'; // Use service name from docker-compose
+//   console.log('Connecting to MongoDB:', mongoUri);
+//   await mongoose.connect(mongoUri, { 
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//   });
 
-  console.log("✅ MongoDB connected");
+// //   console.log("✅ MongoDB connected");
+//   console.log("✅ MongoDB connected");
 
   // ---------------- Middlewares ----------------
   app.use(express.json());
@@ -61,24 +78,27 @@ await mongoose.connect(mongoUri, {
   app.use(express.static("public"));
 
   // ---------------- Routes ----------------
-  app.post("/api/create", async (req, res) => {
-    const { username, email, password, age } = req.body;
-    if (!username || !email || !password) return res.status(400).json({ error: "Missing fields" });
+app.post("/api/create", async (req, res) => {
+  const { username, email, password, age } = req.body;
+  console.log("📝 Create user request:", { username, email, age }); // Debug log
+  
+  if (!username || !email || !password) return res.status(400).json({ error: "Missing fields" });
 
-    try {
-      const salt = await bcrypt.genSalt(10);
-      const hash = await bcrypt.hash(password, salt);
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
 
-      await userModel.create({ username, email, password: hash, age });
+    const newUser = await userModel.create({ username, email, password: hash, age });
+    console.log("✅ User created in DB:", newUser._id); // Debug log
 
-      const token = jwt.sign({ email }, "shhshshshshh", { expiresIn: "1h" });
-      res.cookie("token", token, { httpOnly: true });
-      res.json({ message: "User created successfully", token });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Error creating user" });
-    }
-  });
+    const token = jwt.sign({ email }, "shhshshshshh", { expiresIn: "1h" });
+    res.cookie("token", token, { httpOnly: true });
+    res.json({ message: "User created successfully", token });
+  } catch (err) {
+    console.error("❌ Error creating user:", err); // Debug log
+    res.status(500).json({ error: "Error creating user" });
+  }
+});
 
   app.post("/api/send-login-verification", async (req, res) => {
     const { email } = req.body;
@@ -186,4 +206,4 @@ await mongoose.connect(mongoUri, {
   });
 }
 
-// startServer().catch(err => console.error("Server startup error:", err));
+startServer().catch(err => console.error("Server startup error:", err));
